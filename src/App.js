@@ -14,7 +14,7 @@ class Grower {
     this.growthPerYear = growthPerYear;
   }
   tick() {
-    this.value = this.value * (1 + this.growthPerYear / 12);
+    this.value = this.value + (this.value * this.growthPerYear) / 12;
   }
   add(value) {
     this.value += value;
@@ -40,6 +40,7 @@ class Mortgage {
 }
 
 const variables = {
+  Description: { val: "Enter description here", type: "freeText" },
   "Inl Stock Value": { val: 500000 },
   "Home Purchase Price": { val: 1000000 },
   "House Appreciation": { val: 0.03 },
@@ -149,12 +150,13 @@ function App() {
   return (
     <div className="App" style={{ padding: `20px` }}>
       <Grid container spacing={2}>
-        {Object.entries(variables).map(([varName]) => {
+        {Object.entries(variables).map(([varName, val]) => {
           return (
-            <Grid item xs={2} key={varName}>
+            <Grid item xs={val.type === "freeText" ? 12 : 2} key={varName}>
               <TextField
                 id="standard-basic"
                 label={varName}
+                fullWidth={val.type === "freeText"}
                 value={varVals[varName]}
                 onChange={(event) =>
                   setVarVals({ ...varVals, [varName]: event.target.value })
