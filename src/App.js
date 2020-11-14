@@ -112,7 +112,15 @@ function App() {
     }),
   };
 
+  let moneyOwedOnHouse =
+    getVarVal("Home Purchase Price") - getVarVal("Down Payment");
+
   const wealth = new Array(MONTHS * YEARS).fill(0).map((val, month) => {
+    const INTEREST_RATE = 0.03;
+    const interestPayment = (moneyOwedOnHouse * INTEREST_RATE) / MONTHS;
+    const principlePayment = getVarVal("Mortgage Payment") - interestPayment;
+    moneyOwedOnHouse -= principlePayment;
+
     // stock value
     const calculateStocks = () => {
       Object.values(growers).forEach((grower) => grower.tick());
@@ -121,7 +129,9 @@ function App() {
 
       const income =
         (month <= homeSaleMonth ? growers.rentCollected.value : 0) +
-        (month === homeSaleMonth ? growers.homeValue.value : 0);
+        (month === homeSaleMonth
+          ? growers.homeValue.value - moneyOwedOnHouse
+          : 0);
       const expenses =
         growers.monthlyCostOfLiving.value +
         (month <= homeSaleMonth ? growers.mortgage.value : 0) +
@@ -169,10 +179,20 @@ function App() {
       <div>
         <br />
         <br />
+        total cash after home sale:
+        {new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(wealth[getVarVal("Years of Ownership") * 12])}
         <br />
         <br />
       </div>
       <Graph wealth={wealth} />
+      <br />
+      <br />
+      Disclaimers: There are probably bugs in this thing! For now, just pay
+      attention UP TO the point of selling the house. I think I'm still
+      subtracting property tax after the sale of the house.
     </div>
   );
 }
