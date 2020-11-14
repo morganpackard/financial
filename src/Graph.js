@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 // style
 const BAR_WIDTH = 1;
 
@@ -29,6 +30,10 @@ const Graph = ({ wealth }) => {
       </div>
     </>
   );
+};
+
+Graph.propTypes = {
+  wealth: PropTypes.object,
 };
 
 export default Graph;

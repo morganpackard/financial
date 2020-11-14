@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import Graph from "./Graph";
 import TextField from "@material-ui/core/TextField";
@@ -7,14 +7,6 @@ import Grid from "@material-ui/core/Grid";
 const MONTHS = 12;
 
 const YEARS = 55;
-
-const growthFactory = (percentPerYear) => {
-  let value = 1;
-  return () => {
-    value = value * (1 + percentPerYear / (100 * MONTHS));
-    return value;
-  };
-};
 
 class Grower {
   constructor({ initialValue, growthPerYear }) {
@@ -62,17 +54,33 @@ const variables = {
   "Property Tax Rate": { val: 0.015 },
   "Tax Rate on Stock Sale": { val: 0.2 },
   "Mortgage Payment": { val: 4000 },
+  "Annual Maintenance % of Value": { val: 0.005 },
+  "Years of Ownership": { val: 30 },
 };
 
 function App() {
-  const [varVals, setVarVals] = useState(
-    Object.entries(variables).reduce((acc, [varName, varDescription]) => {
+  const urlVars = (() => {
+    try {
+      return JSON.parse(decodeURI(window.location.hash).substr(1));
+    } catch (e) {
+      return {};
+    }
+  })();
+
+  const [varVals, setVarVals] = useState({
+    ...Object.entries(variables).reduce((acc, [varName, varDescription]) => {
       return {
         ...acc,
         [varName]: varDescription.val,
       };
-    }, {})
-  );
+    }, {}),
+    ...urlVars,
+  });
+
+  useEffect(() => {
+    const encodedVars = encodeURI(JSON.stringify(varVals));
+    window.location.hash = encodedVars;
+  });
 
   const getVarVal = (name) => {
     if (name in varVals) {
@@ -99,43 +107,51 @@ function App() {
     }),
     homeValue: new Grower({
       initialValue: getVarVal("Home Purchase Price"),
-      growthPerYear: 0.03,
+      growthPerYear: getVarVal("House Appreciation"),
     }),
   };
 
-  // stock value
-  const calculateStocks = () => {
-    Object.values(growers).forEach((grower) => grower.tick());
+  const wealth = new Array(MONTHS * YEARS).fill(0).map((val, month) => {
+    // stock value
+    const calculateStocks = () => {
+      Object.values(growers).forEach((grower) => grower.tick());
 
-    const income = growers.rentCollected.value;
-    const expenses =
-      growers.monthlyCostOfLiving.value +
-      growers.mortgage.value +
-      income * getVarVal("Income Tax on Rent") +
-      (growers.homeValue.value * getVarVal("Property Tax Rate")) / 12;
+      const homeSaleMonth = getVarVal("Years of Ownership") * MONTHS;
 
-    const monthlyCashFlow = income - expenses;
+      const income =
+        (month <= homeSaleMonth ? growers.rentCollected.value : 0) +
+        (month === homeSaleMonth ? growers.homeValue.value : 0);
+      const expenses =
+        growers.monthlyCostOfLiving.value +
+        (month <= homeSaleMonth ? growers.mortgage.value : 0) +
+        (month <= homeSaleMonth
+          ? income * getVarVal("Income Tax on Rent")
+          : 0) +
+        (growers.homeValue.value * getVarVal("Annual Maintenance % of Value")) /
+          12 +
+        (growers.homeValue.value * getVarVal("Property Tax Rate")) / 12;
 
-    growers.stock.add(
-      monthlyCashFlow +
-        (monthlyCashFlow < 0
-          ? monthlyCashFlow * getVarVal("Tax Rate on Stock Sale")
-          : 0)
-    );
+      const monthlyCashFlow = income - expenses;
 
-    return growers.stock.value;
-  };
+      growers.stock.add(
+        monthlyCashFlow +
+          (monthlyCashFlow < 0
+            ? monthlyCashFlow * getVarVal("Tax Rate on Stock Sale")
+            : 0)
+      );
 
-  const wealth = new Array(MONTHS * YEARS)
-    .fill(0)
-    .map(() => Math.max(0, calculateStocks()));
+      return growers.stock.value;
+    };
+
+    return Math.max(0, calculateStocks());
+  });
 
   return (
     <div className="App" style={{ padding: `20px` }}>
       <Grid container spacing={2}>
-        {Object.entries(variables).map(([varName, val]) => {
+        {Object.entries(variables).map(([varName]) => {
           return (
-            <Grid item xs={2}>
+            <Grid item xs={2} key={varName}>
               <TextField
                 id="standard-basic"
                 label={varName}
