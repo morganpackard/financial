@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 // style
 const BAR_WIDTH = 1;
@@ -6,10 +6,20 @@ const BAR_WIDTH = 1;
 const Graph = ({ wealth }) => {
   const maxStocks = wealth.reduce((val, acc) => (val > acc ? val : acc), 0);
 
+  const [mouseoverText, setMouseOverText] = useState("");
+
   return (
     <>
       {wealth.map((money, idx) => (
         <div
+          onMouseOver={() =>
+            setMouseOverText(
+              new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(money)
+            )
+          }
           key={idx}
           style={{
             display: "inline-block",
@@ -21,13 +31,7 @@ const Graph = ({ wealth }) => {
         ></div>
       ))}
 
-      <div>
-        Max:{" "}
-        {new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(maxStocks)}
-      </div>
+      <div>{mouseoverText}</div>
     </>
   );
 };

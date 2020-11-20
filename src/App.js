@@ -110,6 +110,19 @@ function App() {
       initialValue: getVarVal("Home Purchase Price"),
       growthPerYear: getVarVal("House Appreciation"),
     }),
+    propertyTaxPerMonth: new Grower({
+      initialValue:
+        (getVarVal("Home Purchase Price") * getVarVal("Property Tax Rate")) /
+        MONTHS,
+      growthPerYear: getVarVal("Inflation"),
+    }),
+    maintenancePerMonth: new Grower({
+      initialValue:
+        (getVarVal("Home Purchase Price") *
+          getVarVal("Annual Maintenance % of Value")) /
+        MONTHS,
+      growthPerYear: getVarVal("Inflation"),
+    }),
   };
 
   let moneyOwedOnHouse =
@@ -132,15 +145,15 @@ function App() {
         (month === homeSaleMonth
           ? growers.homeValue.value - moneyOwedOnHouse
           : 0);
+
       const expenses =
         growers.monthlyCostOfLiving.value +
         (month <= homeSaleMonth ? growers.mortgage.value : 0) +
         (month <= homeSaleMonth
-          ? income * getVarVal("Income Tax on Rent")
-          : 0) +
-        (growers.homeValue.value * getVarVal("Annual Maintenance % of Value")) /
-          12 +
-        (growers.homeValue.value * getVarVal("Property Tax Rate")) / 12;
+          ? growers.rentCollected.value * getVarVal("Income Tax on Rent")
+          : 0); /*+
+        growers.maintenancePerMonth.value +
+        growers.propertyTaxPerMonth.value*/
 
       const monthlyCashFlow = income - expenses;
 
@@ -151,11 +164,13 @@ function App() {
             : 0)
       );
 
-      return growers.stock.value;
+      return { stock: Math.max(growers.stock.value), expenses, income };
     };
 
-    return Math.max(0, calculateStocks());
+    return calculateStocks();
   });
+
+  debugger;
 
   return (
     <div className="App" style={{ padding: `20px` }}>
@@ -183,15 +198,16 @@ function App() {
         {new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
-        }).format(wealth[getVarVal("Years of Ownership") * 12])}
+        }).format(wealth[getVarVal("Years of Ownership") * 12].stock)}
         <br />
         <br />
       </div>
-      <Graph wealth={wealth} />
+      <Graph wealth={wealth.map((month) => month.stock)} />
+      <Graph wealth={wealth.map((month) => month.expenses)} />
       <br />
       <br />
       Disclaimers: There are probably bugs in this thing! For now, just pay
-      attention UP TO the point of selling the house. I think I'm still
+      attention UP TO the point of selling the house. I think I am m still
       subtracting property tax after the sale of the house.
     </div>
   );
