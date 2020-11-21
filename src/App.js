@@ -3,26 +3,11 @@ import "./App.css";
 import Graph from "./Graph";
 import TextField from "@material-ui/core/TextField";
 import Grid from "@material-ui/core/Grid";
+import Grower from "./Grower";
 
 const MONTHS = 12;
 
 const YEARS = 55;
-
-class Grower {
-  constructor({ initialValue, growthPerYear }) {
-    this.value = initialValue;
-    this.growthPerYear = growthPerYear;
-  }
-  tick() {
-    this.value = this.value + (this.value * this.growthPerYear) / 12;
-  }
-  add(value) {
-    this.value += value;
-  }
-  subtract(value) {
-    this.value -= value;
-  }
-}
 
 class Mortgage {
   constructor({ monthlyPayment }) {
@@ -94,7 +79,7 @@ function App() {
   const growers = {
     stock: new Grower({
       initialValue: getVarVal("Inl Stock Value") - getVarVal("Down Payment"),
-      growthPerYear: getVarVal("Stock Market Return"),
+      growthPerYear: 0,
     }),
     monthlyCostOfLiving: new Grower({
       initialValue:
@@ -140,7 +125,11 @@ function App() {
 
       const homeSaleMonth = getVarVal("Years of Ownership") * MONTHS;
 
+      const stockgrowth =
+        growers.stock.value * getVarVal("Stock Market Return");
+
       const income =
+        stockgrowth +
         (month <= homeSaleMonth ? growers.rentCollected.value : 0) +
         (month === homeSaleMonth
           ? growers.homeValue.value - moneyOwedOnHouse
@@ -164,7 +153,7 @@ function App() {
             : 0)
       );
 
-      return { stock: Math.max(growers.stock.value), expenses, income };
+      return { stock: Math.max(0, growers.stock.value), expenses, income };
     };
 
     return calculateStocks();
