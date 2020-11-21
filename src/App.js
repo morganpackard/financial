@@ -27,21 +27,7 @@ class Mortgage {
 const variables = {
   Description: { val: "Enter description here", type: "freeText" },
   "Inl Stock Value": { val: 500000 },
-  "Home Purchase Price": { val: 1000000 },
-  "House Appreciation": { val: 0.03 },
-  Inflation: { val: 0.03 },
   "Stock Market Return": { val: 0.06 },
-  "Monthly Rent Collected": { val: 2000 },
-
-  "Down Payment": { val: 200000 },
-  "Household Expenses": { val: 4500 },
-  "Yearly Health Ins": { val: 18000 },
-  "Income Tax on Rent": { val: 0.2 },
-  "Property Tax Rate": { val: 0.015 },
-  "Tax Rate on Stock Sale": { val: 0.2 },
-  "Mortgage Payment": { val: 4000 },
-  "Annual Maintenance % of Value": { val: 0.005 },
-  "Years of Ownership": { val: 30 },
 };
 
 function App() {
@@ -78,93 +64,23 @@ function App() {
 
   const growers = {
     stock: new Grower({
-      initialValue: getVarVal("Inl Stock Value") - getVarVal("Down Payment"),
+      initialValue: getVarVal("Inl Stock Value"),
       growthPerYear: getVarVal("Stock Market Return"),
-    }),
-    monthlyCostOfLiving: new Grower({
-      initialValue:
-        getVarVal("Household Expenses") + getVarVal("Yearly Health Ins") / 12,
-      growthPerYear: getVarVal("Inflation"),
-    }),
-    mortgage: new Mortgage({ monthlyPayment: getVarVal("Mortgage Payment") }),
-    rentCollected: new Grower({
-      initialValue: getVarVal("Monthly Rent Collected"),
-      growthPerYear: 0.02,
-    }),
-    homeValue: new Grower({
-      initialValue: getVarVal("Home Purchase Price"),
-      growthPerYear: getVarVal("House Appreciation"),
-    }),
-    propertyTaxPerMonth: new Grower({
-      initialValue:
-        (getVarVal("Home Purchase Price") * getVarVal("Property Tax Rate")) /
-        MONTHS,
-      growthPerYear: getVarVal("Inflation"),
-    }),
-    maintenancePerMonth: new Grower({
-      initialValue:
-        (getVarVal("Home Purchase Price") *
-          getVarVal("Annual Maintenance % of Value")) /
-        MONTHS,
-      growthPerYear: getVarVal("Inflation"),
     }),
   };
 
-  let moneyOwedOnHouse =
-    getVarVal("Home Purchase Price") - getVarVal("Down Payment");
-
   const wealth = new Array(MONTHS * YEARS).fill(0).map((val, month) => {
-    const INTEREST_RATE = 0.03;
-    const interestPayment = (moneyOwedOnHouse * INTEREST_RATE) / MONTHS;
-    const principlePayment = getVarVal("Mortgage Payment") - interestPayment;
-    moneyOwedOnHouse -= principlePayment;
-
     // stock value
     const calculateStocks = () => {
       Object.values(growers).forEach((grower) => grower.tick());
 
-      const homeSaleMonth = getVarVal("Years of Ownership") * MONTHS;
-
-      const stockgrowth =
-        growers.stock.value * getVarVal("Stock Market Return");
-
-      const income =
-        stockgrowth +
-        (month <= homeSaleMonth ? growers.rentCollected.value : 0) +
-        (month === homeSaleMonth
-          ? growers.homeValue.value - moneyOwedOnHouse
-          : 0);
-
-      const expenses =
-        growers.monthlyCostOfLiving.value +
-        (month <= homeSaleMonth ? growers.mortgage.value : 0) +
-        (month <= homeSaleMonth
-          ? growers.rentCollected.value * getVarVal("Income Tax on Rent")
-          : 0); /*+
-        growers.maintenancePerMonth.value +
-        growers.propertyTaxPerMonth.value*/
-
-      const monthlyCashFlow = income - expenses;
-
-      growers.stock.add(
-        monthlyCashFlow +
-          (monthlyCashFlow < 0
-            ? monthlyCashFlow * getVarVal("Tax Rate on Stock Sale")
-            : 0)
-      );
-
       return {
         stock: Math.max(0, growers.stock.value),
-        expenses,
-        income,
-        monthlyCostOfLiving: growers.monthlyCostOfLiving.value,
       };
     };
 
     return calculateStocks();
   });
-
-  debugger;
 
   return (
     <div className="App" style={{ padding: `20px` }}>
@@ -185,24 +101,7 @@ function App() {
           );
         })}
       </Grid>
-      <div>
-        <br />
-        <br />
-        total cash after home sale:
-        {new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(wealth[getVarVal("Years of Ownership") * 12].stock)}
-        <br />
-        <br />
-      </div>
       <Graph wealth={wealth.map((month) => month.stock)} />
-      <Graph wealth={wealth.map((month) => month.expenses)} />
-      <br />
-      <br />
-      Disclaimers: There are probably bugs in this thing! For now, just pay
-      attention UP TO the point of selling the house. I think I am m still
-      subtracting property tax after the sale of the house.
     </div>
   );
 }

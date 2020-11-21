@@ -7,7 +7,8 @@ class Grower {
   }
   tick() {
     this.count++;
-    this.value = this.initialValue * (1 + this.growthPerYear) ** this.count;
+    this.value =
+      this.initialValue * (1 + this.growthPerYear / 12) ** this.count;
   }
   add(value) {
     this.value += value;
