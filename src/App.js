@@ -79,7 +79,7 @@ function App() {
   const growers = {
     stock: new Grower({
       initialValue: getVarVal("Inl Stock Value") - getVarVal("Down Payment"),
-      growthPerYear: 0,
+      growthPerYear: getVarVal("Stock Market Return"),
     }),
     monthlyCostOfLiving: new Grower({
       initialValue:
@@ -153,7 +153,12 @@ function App() {
             : 0)
       );
 
-      return { stock: Math.max(0, growers.stock.value), expenses, income };
+      return {
+        stock: Math.max(0, growers.stock.value),
+        expenses,
+        income,
+        monthlyCostOfLiving: growers.monthlyCostOfLiving.value,
+      };
     };
 
     return calculateStocks();
